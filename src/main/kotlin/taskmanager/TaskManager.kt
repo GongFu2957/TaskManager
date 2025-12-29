@@ -1,6 +1,7 @@
 package com.gongfu.taskmanager
 
 import java.io.File
+import kotlin.io.forEachLine
 
 // defining what essential properties are in every task
 data class Task(
@@ -9,9 +10,35 @@ data class Task(
     var status: String = "Not Done"
 )
 
+
 // methods and properties responsible for task management
 class TaskManager {
     val taskList = mutableListOf<Task>()
+
+    fun loadTaskList(filename: String): Boolean {
+        return try {
+            val file = File("${System.getProperty("user.dir")}/$filename")
+            if (!file.exists()) {
+                println("File not found: $filename")
+                return false
+            }
+
+            taskList.clear()
+            file.forEachLine { line ->
+                val parts = line.split('|')
+                if (parts.size == 3) {
+                    val task = Task(parts[0].trim(), parts[1].trim(), parts[2].trim())
+                    taskList.add(task)
+                }
+            }
+
+            println("Loaded ${taskList.size} tasks from $filename")
+            return true
+        } catch (e: Exception) {
+            println("Load failed: ${e.message}")
+            false
+        }
+   }
     fun addTask(task: Task) {
         taskList.add(task)
     }
@@ -48,31 +75,27 @@ class TaskManager {
     fun saveTaskList(): Boolean {
         return try {
             val safeFileNameRegex = Regex("""^[A-Za-z0-9 _.-]{1,255}$""")
-            println("Please enter a name for the task list:")
-            val input = readln().trim()
+            var input: String
 
-            if (input.isEmpty()) {
-                println("File name can not be blank. Please enter a valid file name.")
-                return false
-            }
+            while (true) {
+                println("Please enter a name for the task list:")
+                input = readln().trim()
 
-            if (!input.matches(safeFileNameRegex)) {
-                println("Invalid file name. Please enter a valid file name:")
-                return false
+                if (input.isEmpty() || !input.matches(safeFileNameRegex)) {
+                    println("Invalid Filename.")
+                    continue
+                }
+                break
             }
 
             val filename = "$input.txt"
             val file = File("${System.getProperty("user.dir")}/$filename")
             file.parentFile?.mkdirs()
-            if (file.exists()) {
-                println("There is already a task list with that name. Please enter a new name:")
-                return false
-            }
 
             file.bufferedWriter().use { writer ->
-                taskList.joinTo(writer, "\n") { "${it.title} |${it.description} |${it.status}" }
+                taskList.joinTo(writer, "\n") { "${it.title}|${it.description}|${it.status}" }
             }
-            println("Task list saved as $filename")
+            println("Task list saved/updated as $filename")
             true
         } catch (e: Exception) {
             println("Save failed: ${e.message}")
@@ -89,7 +112,8 @@ fun printOptions() {
     println("3. Mark Task as Done")
     println("4. Delete Task")
     println("5. Exit")
-    print("Enter your choice (1-5):")
+    println("6. Load Tasks")
+    print("Enter your choice (1-6):")
 }
 
 fun readIndex(taskListSize: Int): Int? {
@@ -135,7 +159,7 @@ fun TaskManager.saveTasksWithPrompt(): Boolean {
 fun main() {
     val taskManager = TaskManager()
 
-    mainloop@ while (true) {
+    while (true) {
         printOptions()
         when (readln()) {
             "1" -> {
@@ -179,9 +203,13 @@ fun main() {
             }
 
             "5" -> {
-                if (taskManager.saveTasksWithPrompt()) {
-                    break@mainloop
-                }
+                taskManager.saveTasksWithPrompt()
+                break
+            }
+            "6" -> {
+                print("\nEnter the filename to load:")
+                val filename = readln().trim() + ".txt"
+                taskManager.loadTaskList(filename)
             }
 
             else -> println("\nInvalid choice, Please try again.")
