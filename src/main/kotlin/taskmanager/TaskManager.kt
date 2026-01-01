@@ -151,6 +151,21 @@ class TaskManager {
             println("Parsing error: ${e.localizedMessage}")
             return null
         }
+
+    }
+
+    fun listAvailableTaskLists(): List<String> {
+        val file = File(System.getProperty("user.dir"))
+            .listFiles { file -> file.isFile && file.extension.lowercase() == "txt" }
+            ?.map { it.nameWithoutExtension }
+            ?.sorted()
+            .orEmpty()
+        return file
+    }
+
+    fun loadTaskListByName(name: String): Boolean {
+        val filename = "$name.txt"
+        return loadTaskList(filename)
     }
 }
 
@@ -162,7 +177,7 @@ fun printOptions() {
     println("3. Mark Task as Done")
     println("4. Delete Task")
     println("5. Exit")
-    println("6. Load Tasks")
+    println("6. Load Task Lists")
     print("Enter your choice (1-6):")
 }
 
@@ -240,7 +255,6 @@ fun main() {
                     val task = Task(title, description)
                     taskManager.addTask(task)
                 }
-                print("Task successfully created!")
             }
 
             "2" -> {
@@ -279,11 +293,23 @@ fun main() {
                 break
             }
             "6" -> {
-                print("\nEnter the filename to load:")
-                val filename = readln().trim() + ".txt"
-                taskManager.loadTaskList(filename)
-            }
+                val lists = taskManager.listAvailableTaskLists()
+                if (lists.isEmpty()) {
+                    continue
+                } else {
+                    println("Available Task Lists:")
+                    lists.forEachIndexed { index, list ->
+                        println("${index + 1}. $list")
+                    }
 
+                    print("Enter number to load (or Enter to skip): ")
+                    val choice = readln().toIntOrNull()
+                    if (choice != null && choice in 1..lists.size) {
+                        val selectedList = lists[choice - 1]
+                        taskManager.loadTaskListByName(selectedList)
+                    }
+                }
+            }
             else -> println("\nInvalid choice, Please try again.")
         }
     }
