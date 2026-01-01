@@ -1,19 +1,27 @@
 package com.gongfu.taskmanager
 
 import java.io.File
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Locale
 import kotlin.io.forEachLine
 
 // defining what essential properties are in every task
 data class Task(
     val title: String,
     val description: String,
-    var status: String = "Not Done"
+    var status: String = "Not Done",
+    val dueDate: LocalDate? = null,
+    val creationDate: LocalDateTime = LocalDateTime.now(),
 )
 
 
 // methods and properties responsible for task management
 class TaskManager {
     val taskList = mutableListOf<Task>()
+    val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.getDefault())
 
     fun loadTaskList(filename: String): Boolean {
         return try {
@@ -24,10 +32,24 @@ class TaskManager {
             }
 
             taskList.clear()
+
             file.forEachLine { line ->
                 val parts = line.split('|')
-                if (parts.size == 3) {
-                    val task = Task(parts[0].trim(), parts[1].trim(), parts[2].trim())
+                if (parts.size == 4) {
+                    val task = Task(
+                        parts[0].trim(),
+                        parts[1].trim(),
+                        parts[2].trim(),
+                        parts[3].trim().takeIf { it.isNotBlank() }?.let { dateString ->
+                            try {
+                                    LocalDate.parse(dateString, dateFormatter)
+                            } catch (e: DateTimeParseException) {
+                                println("Invalid date format '$dateString' for string '${parts[0]}'")
+                                println("Parsing error: ${e.localizedMessage}")
+                                null
+                            }
+                        }
+                    )
                     taskList.add(task)
                 }
             }
@@ -49,7 +71,16 @@ class TaskManager {
             for ((index, task) in taskList.withIndex()) {
                 println(
                     "${index + 1}. ${task.title} - " +
-                            "${task.description} - ${task.status}"
+                            "${task.description} - ${task.status} " +
+                            "- ${
+                                if (task.dueDate != null && task.dueDate > task.creationDate.toLocalDate()) {
+                                    "Due Date: ${dateFormatter.format(task.dueDate)}"
+                                } else if (task.dueDate == null) {
+                                    ""
+                                } else {
+                                    "OVERDUE TASK: ${dateFormatter.format(task.dueDate)}"
+                                }
+                            }"
                 )
             }
         } else
@@ -93,13 +124,31 @@ class TaskManager {
             file.parentFile?.mkdirs()
 
             file.bufferedWriter().use { writer ->
-                taskList.joinTo(writer, "\n") { "${it.title}|${it.description}|${it.status}" }
+                taskList.joinTo(writer, "\n") { "${it.title}|${it.description}|${it.status}|${dateFormatter.format(it.dueDate)}" }
             }
             println("Task list saved/updated as $filename")
             true
         } catch (e: Exception) {
             println("Save failed: ${e.message}")
             false
+        }
+    }
+
+    fun getDueDate(): LocalDate? {
+        println("\nPlease enter a valid Due Date. Using the format 'yyyy/MM/dd.:")
+        val input = readln().trim()
+        if (input.isBlank()) {
+            println("Date can not be empty")
+            return null
+        }
+
+        try {
+            val dueDate = LocalDate.parse(input.trim(), dateFormatter)
+            return dueDate
+        } catch (e: DateTimeParseException) {
+            println("Invalid date format. Must follow 'yyyy-MM-dd' (got: '$input')")
+            println("Parsing error: ${e.localizedMessage}")
+            return null
         }
     }
 }
@@ -155,6 +204,23 @@ fun TaskManager.saveTasksWithPrompt(): Boolean {
     }
 }
 
+fun dueDatePrompt(): Boolean {
+    println("Do you want to have a due date for your task? Enter 1 for yes, 2 for no:")
+    return when (readln()) {
+        "1" -> {
+            true
+        }
+        "2" -> {
+            false
+        }
+        else -> {
+            println("Invalid. Discarding Input...")
+            false
+        }
+    }
+}
+
+
 
 fun main() {
     val taskManager = TaskManager()
@@ -167,8 +233,15 @@ fun main() {
                 val title = readln()
                 print("\nEnter task description: ")
                 val description = readln()
-                val task = Task(title, description)
-                taskManager.addTask(task)
+                if (dueDatePrompt()) {
+                    val dueDate = taskManager.getDueDate()
+                    val task = Task(title,description,"Not Done", dueDate)
+                    taskManager.addTask(task)
+                } else {
+                    val task = Task(title, description)
+                    taskManager.addTask(task)
+                }
+                print("Task successfully created!")
             }
 
             "2" -> {
