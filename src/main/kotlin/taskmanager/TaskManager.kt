@@ -14,11 +14,11 @@ data class Task(
     val description: String,
     var status: String = "Not Done",
     val dueDate: LocalDate? = null,
-    val creationDate: LocalDateTime = LocalDateTime.now(),
+    val creationDate: LocalDateTime = LocalDateTime.now()
 )
 
 
-// methods and properties responsible for task management
+// methods and properties responsible for task management.
 class TaskManager {
     val taskList = mutableListOf<Task>()
     val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.getDefault())
@@ -136,7 +136,7 @@ class TaskManager {
     }
 
     fun getDueDate(): LocalDate? {
-        println("\nPlease enter a valid Due Date. Using the format 'yyyy/MM/dd.:")
+        println("\nPlease enter a valid Due Date. Using the format 'yyyy/MM/dd:")
         val input = readln().trim()
         if (input.isBlank()) {
             println("Date can not be empty")
@@ -147,7 +147,7 @@ class TaskManager {
             val dueDate = LocalDate.parse(input.trim(), dateFormatter)
             return dueDate
         } catch (e: DateTimeParseException) {
-            println("Invalid date format. Must follow 'yyyy-MM-dd' (got: '$input')")
+            println("Invalid date format. Must follow 'yyyy/MM/dd' (got: '$input')")
             println("Parsing error: ${e.localizedMessage}")
             return null
         }
@@ -220,8 +220,6 @@ fun dueDatePrompt(): Boolean {
         }
     }
 }
-
-
 
 fun main() {
     val taskManager = TaskManager()
