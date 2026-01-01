@@ -79,7 +79,15 @@ class TaskManager {
                 println(
                     "${index + 1}. ${task.title} - " +
                             "${task.description} - ${task.status} " +
-                            if (dueInfo.isNotBlank()) " - $dueInfo" else ""
+                            "- ${
+                                if (task.dueDate != null && task.dueDate > task.creationDate.toLocalDate()) {
+                                    "Due Date: ${dateFormatter.format(task.dueDate)}"
+                                } else if (task.dueDate == null) {
+                                    ""
+                                } else {
+                                    "OVERDUE TASK: ${dateFormatter.format(task.dueDate)}"
+                                }
+                            }"
                 )
             }
         } else
@@ -123,9 +131,7 @@ class TaskManager {
             file.parentFile?.mkdirs()
 
             file.bufferedWriter().use { writer ->
-                taskList.joinTo(writer, "\n") { task ->
-                    "${task.title}|${task.description}|${task.status}|${task.dueDate?.let { 
-                    dateFormatter.format(it) } ?: "" }" }
+                taskList.joinTo(writer, "\n") { "${it.title}|${it.description}|${it.status}|${dateFormatter.format(it.dueDate)}" }
             }
             println("Task list saved/updated as $filename")
             true
