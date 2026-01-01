@@ -136,7 +136,7 @@ class TaskManager {
     }
 
     fun getDueDate(): LocalDate? {
-        println("\nPlease enter a valid Due Date. Using the format 'yyyy/MM/dd.:")
+        println("\nPlease enter a valid Due Date. Using the format 'yyyy/MM/dd:")
         val input = readln().trim()
         if (input.isBlank()) {
             println("Date can not be empty")
@@ -147,7 +147,7 @@ class TaskManager {
             val dueDate = LocalDate.parse(input.trim(), dateFormatter)
             return dueDate
         } catch (e: DateTimeParseException) {
-            println("Invalid date format. Must follow 'yyyy-MM-dd' (got: '$input')")
+            println("Invalid date format. Must follow 'yyyy/MM/dd' (got: '$input')")
             println("Parsing error: ${e.localizedMessage}")
             return null
         }
