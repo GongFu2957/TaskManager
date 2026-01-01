@@ -69,18 +69,17 @@ class TaskManager {
         if (taskList.isNotEmpty()) {
             println("\nTasks:")
             for ((index, task) in taskList.withIndex()) {
+                val dueInfo = when {
+                    task.dueDate == null -> "" //no due date
+                    task.dueDate.isBefore(LocalDate.now()) ->
+                        "OVERDUE: ${dateFormatter.format(task.dueDate)}"
+                    else ->
+                        "DUE: ${dateFormatter.format(task.dueDate)}"
+                }
                 println(
                     "${index + 1}. ${task.title} - " +
                             "${task.description} - ${task.status} " +
-                            "- ${
-                                if (task.dueDate != null && task.dueDate > task.creationDate.toLocalDate()) {
-                                    "Due Date: ${dateFormatter.format(task.dueDate)}"
-                                } else if (task.dueDate == null) {
-                                    ""
-                                } else {
-                                    "OVERDUE TASK: ${dateFormatter.format(task.dueDate)}"
-                                }
-                            }"
+                            if (dueInfo.isNotBlank()) " - $dueInfo" else ""
                 )
             }
         } else
@@ -124,7 +123,9 @@ class TaskManager {
             file.parentFile?.mkdirs()
 
             file.bufferedWriter().use { writer ->
-                taskList.joinTo(writer, "\n") { "${it.title}|${it.description}|${it.status}|${dateFormatter.format(it.dueDate)}" }
+                taskList.joinTo(writer, "\n") { task ->
+                    "${task.title}|${task.description}|${task.status}|${task.dueDate?.let { 
+                    dateFormatter.format(it) } ?: "" }" }
             }
             println("Task list saved/updated as $filename")
             true
