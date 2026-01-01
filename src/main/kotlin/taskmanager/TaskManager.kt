@@ -14,11 +14,11 @@ data class Task(
     val description: String,
     var status: String = "Not Done",
     val dueDate: LocalDate? = null,
-    val creationDate: LocalDateTime = LocalDateTime.now(),
+    val creationDate: LocalDateTime = LocalDateTime.now()
 )
 
 
-// methods and properties responsible for task management
+// methods and properties responsible for task management.
 class TaskManager {
     val taskList = mutableListOf<Task>()
     val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd", Locale.getDefault())
@@ -220,8 +220,6 @@ fun dueDatePrompt(): Boolean {
         }
     }
 }
-
-
 
 fun main() {
     val taskManager = TaskManager()
